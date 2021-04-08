@@ -27,16 +27,10 @@ public class SortCsvService {
                 if(!isNumeric(valArr[3]))continue;//if not a header
                 Integer version = Integer.valueOf(valArr[3]);
                 String userId = valArr[0];
+                String comp = valArr[4];
 
-                EnrolleeDto enrolle = new EnrolleeDto(userId, valArr[1], valArr[2], version, valArr[4]);
-                if (!companiesMapping.containsKey(valArr[4])) {//add to map if company not recorded
-                    companiesMapping.put(valArr[4], new CompanyDto());
-                }
-                CompanyDto tempComp = companiesMapping.get(valArr[4]);//get pointer
-                if(!tempComp.getUserIdToEnrollee().containsKey(userId)// if not found or has old version.. add
-                        || (tempComp.getUserIdToEnrollee().containsKey(userId) && (version > tempComp.getUserIdToEnrollee().get(userId).version))){
-                    tempComp.getUserIdToEnrollee().put(userId, enrolle);
-                }
+                EnrolleeDto enrolle = new EnrolleeDto(userId, valArr[1], valArr[2], version, comp);
+                addToMapAvoidingDuplicates(comp,userId,version,enrolle,companiesMapping);
             }
             br.close();
             sortCompanies(companiesMapping);
@@ -45,7 +39,17 @@ public class SortCsvService {
         }
     }
 
-    public void sortCompanies(HashMap<String, CompanyDto> companiesMapping){//sort list
+    public void addToMapAvoidingDuplicates( String comp,String userId ,Integer version,EnrolleeDto enrolle, HashMap<String, CompanyDto> companiesMapping ){
+        if (!companiesMapping.containsKey(comp)) {//add to map if company not recorded
+            companiesMapping.put(comp, new CompanyDto());
+        }
+        CompanyDto tempComp = companiesMapping.get(comp);//get pointer
+        if(!tempComp.getUserIdToEnrollee().containsKey(userId)// if not found or has old version.. add
+                || (tempComp.getUserIdToEnrollee().containsKey(userId) && (version > tempComp.getUserIdToEnrollee().get(userId).version))){
+            tempComp.getUserIdToEnrollee().put(userId, enrolle);
+        }
+    }
+    private void sortCompanies(HashMap<String, CompanyDto> companiesMapping){//sort list
         for(String company : companiesMapping.keySet()){
             CompanyDto tempComp = companiesMapping.get(company);
             List<EnrolleeDto> enrolleeDtoList = new ArrayList<EnrolleeDto>(tempComp.getUserIdToEnrollee().values());
